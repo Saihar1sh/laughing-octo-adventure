@@ -13,8 +13,9 @@ public class DeckManager : MonoBehaviour
 
 
     [Header("Prefabs & Parents")]
-    public CardController cardPrefab;
-    public RectTransform gridParent; 
+    [SerializeField] private CardController cardPrefab;
+    [SerializeField] private RectTransform gridParent;
+    [SerializeField] private GridLayoutGroup gridLayout;
 
 
     [Header("Layout")]
@@ -42,6 +43,7 @@ public class DeckManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) Destroy(gameObject);
         Instance = this;
+        StartNewLayout(5,5,453);
     }
 
 
@@ -65,6 +67,7 @@ public class DeckManager : MonoBehaviour
 
     void GenerateBoard(int? seed)
     {
+
         int cells = rows * cols;
         if (cells % 2 != 0) cells--; // ensure even cards
 
@@ -130,10 +133,12 @@ public class DeckManager : MonoBehaviour
             if (a.State == CardState.Matched || b.State == CardState.Matched) continue;
 
 
+            //Matched
             if (a.PairId == b.PairId)
             {
                 a.SetMatched();
                 b.SetMatched();
+                
                 //TODO: Score on matched
 
 
@@ -143,6 +148,7 @@ public class DeckManager : MonoBehaviour
                     //TODO: Game over condition
                 }
             }
+            //Mismatched
             else
             {
                 CloseAfterDelay(a, b);

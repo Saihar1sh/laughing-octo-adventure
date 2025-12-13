@@ -102,7 +102,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5916552349063557649}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -25}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -166,7 +166,7 @@ GameObject:
   - component: {fileID: 2272553762115271482}
   - component: {fileID: 7612235340616361976}
   m_Layer: 5
-  m_Name: Image
+  m_Name: Card
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -180,7 +180,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6759840635850233944}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -27.5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -258,7 +258,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   faceImage: {fileID: 5481042123840448721}
   backImage: {fileID: 5344663359449615259}
+  canvasGroup: {fileID: 0}
   flipDuration: 0.25
+  showMatchedDuration: 0.4
   flipCurve:
     serializedVersion: 2
     m_Curve:
@@ -272,8 +274,26 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
+      time: 0.2098127
+      value: 0.1130556
+      inSlope: 0.990054
+      outSlope: 0.990054
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.3244539
+      value: 0.5997438
+      inSlope: 3.401819
+      outSlope: 3.401819
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.28599873
+      outWeight: 0.33333334
+    - serializedVersion: 3
       time: 1
-      value: 1
+      value: 0.9952812
       inSlope: 0
       outSlope: 0
       tangentMode: 0

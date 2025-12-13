@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -12,15 +13,17 @@ public enum CardState
     Revealed,
     Matched
 }
-[RequireComponent(typeof(RectTransform))]
+[RequireComponent(typeof(RectTransform),typeof(CanvasGroup))]
 public class CardController : MonoBehaviour, IPointerClickHandler
 {
     [Header("Visuals")]
     [SerializeField] private Image faceImage;
     [SerializeField] private Image backImage;
+    [SerializeField] private CanvasGroup canvasGroup;
 
-    [Header("Flip Animation")]
+    [Header("Animations Configuration")]
     [SerializeField] private float flipDuration = 0.25f;
+    [SerializeField] private float showMatchedDuration = 0.5f;
     [SerializeField] private AnimationCurve flipCurve =
         AnimationCurve.EaseInOut(0, 0, 1, 1);
 
@@ -30,15 +33,19 @@ public class CardController : MonoBehaviour, IPointerClickHandler
     RectTransform rectTransform;
     CancellationTokenSource flipCts;
 
-    void Awake()
+    private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
+        canvasGroup = GetComponent<CanvasGroup>();
     }
 
     public void Initialize(int pairId, Sprite faceSprite)
     {
         PairId = pairId;
         faceImage.sprite = faceSprite;
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
         SetHiddenInstant();
     }
 
@@ -71,7 +78,7 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         await FlipAsync(open: false, flipCts.Token);
     }
 
-    async Task FlipAsync(bool open, CancellationToken token)
+    private async Task FlipAsync(bool open, CancellationToken token)
     {
         float half = flipDuration * 0.5f;
         float elapsed = 0f;
@@ -111,29 +118,36 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         State = open ? CardState.Revealed : CardState.Hidden;
     }
 
-    public void SetMatched()
+    public async void SetMatched()
     {
         CancelFlip();
         State = CardState.Matched;
 
-        faceImage.gameObject.SetActive(true);
-        backImage.gameObject.SetActive(false);
+        OpenCard(true);
 
-        gameObject.SetActive(false);
+        await Task.Delay(TimeSpan.FromSeconds(showMatchedDuration));
+        
+        PlayMatchedFade();
     }
 
-    void SetHiddenInstant()
+    private void OpenCard(bool open)
+    {
+        faceImage.gameObject.SetActive(open);
+        backImage.gameObject.SetActive(!open);
+    }
+
+    private void SetHiddenInstant()
     {
         CancelFlip();
 
         State = CardState.Hidden;
         rectTransform.localScale = Vector3.one;
 
-        faceImage.gameObject.SetActive(false);
-        backImage.gameObject.SetActive(true);
+        OpenCard(false);
+
     }
 
-    void CancelFlip()
+    private void CancelFlip()
     {
         if (flipCts != null)
         {
@@ -143,8 +157,27 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         CancelFlip();
+    }
+    
+    private async void PlayMatchedFade()
+    {
+        faceImage.gameObject.SetActive(true);
+        backImage.gameObject.SetActive(false);
+
+        float waitDur = 0.3f;
+        
+        float dur = 0.4f;
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            canvasGroup.alpha = 1f - (t / dur);
+            await Task.Yield();
+        }
+        canvasGroup.alpha = 0f;
+        gameObject.SetActive(false);
     }
 }
