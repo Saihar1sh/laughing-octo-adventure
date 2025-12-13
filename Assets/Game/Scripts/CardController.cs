@@ -39,15 +39,15 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         canvasGroup = GetComponent<CanvasGroup>();
     }
 
-    public void Initialize(int pairId, Sprite face)
+    public async void Initialize(int pairId, Sprite face)
     {
         PairId = pairId;
         faceImage.sprite = face;
 
         canvasGroup.alpha = 1f;
-        canvasGroup.interactable = true;
-        canvasGroup.blocksRaycasts = true;
 
+        canvasGroup.blocksRaycasts = true;
+        canvasGroup.interactable = true;
         SetHiddenInstant();
     }
 
@@ -97,8 +97,7 @@ public class CardController : MonoBehaviour, IPointerClickHandler
             await Task.Yield();
         }
 
-        backImage.gameObject.SetActive(!open);
-        faceImage.gameObject.SetActive(open);
+        ShowFaceCard(open);
 
         t = 0f;
         while (t < half)
@@ -137,8 +136,14 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         CancelFlip();
         State = CardState.Hidden;
         rectTransform.localScale = Vector3.one;
-        faceImage.gameObject.SetActive(false);
-        backImage.gameObject.SetActive(true);
+        ShowFaceCard(false);
+        canvasGroup.interactable = true;
+    }
+
+    private void ShowFaceCard(bool show = true)
+    {
+        faceImage.gameObject.SetActive(show);
+        backImage.gameObject.SetActive(!show);
     }
 
     private void CancelFlip()

@@ -1,3 +1,6 @@
+// =========================
+// DeckManager.cs (FINAL REWRITE)
+// =========================
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,27 +12,28 @@ public class DeckManager : MonoBehaviour
 {
     public static DeckManager Instance { get; private set; }
 
-    [Header("Prefabs & Parents")] [SerializeField]
-    private CardController cardPrefab;
+    [Header("Prefabs")]
+    [SerializeField] private CardController cardPrefab;
+    [SerializeField] private RectTransform spacerPrefab; // empty invisible spacer
 
+    [Header("Layout Target")]
     [SerializeField] private RectTransform gridParent;
     [SerializeField] private GridLayoutGroup gridLayout;
 
-    [Header("Layout")] [SerializeField] private int rows = 4;
+    [Header("Grid Dimensions")]
+    [SerializeField] private int rows = 4;
     [SerializeField] private int cols = 4;
-    [SerializeField] private Vector2 spacing = new Vector2(8, 8);
-    [SerializeField] private Vector2 padding = new Vector2(10, 10);
 
-    [Header("Sprites")] [SerializeField] private List<Sprite> faceSprites;
-
-    private readonly List<CardController> allCards = new();
-    private readonly Queue<CardController> revealQueue = new();
-    private const float CardAspect = 0.7f; // width / height
-    
+    [Header("Base Layout (Design Space)")]
     [SerializeField] private Vector2 baseCardSize = new Vector2(160, 230);
     [SerializeField] private Vector2 baseSpacing = new Vector2(12, 12);
     [SerializeField] private Vector2 basePadding = new Vector2(20, 20);
 
+    [Header("Card Faces")]
+    [SerializeField] private List<Sprite> faceSprites;
+
+    private readonly List<CardController> allCards = new();
+    private readonly Queue<CardController> revealQueue = new();
 
     private const float MismatchCloseDelay = 0.6f;
 
@@ -40,15 +44,14 @@ public class DeckManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
     }
 
     private void Start()
     {
-        StartNewLayout(rows, cols, 453);
+        StartNewLayout(5, 5, 453);
     }
-
+    
     public void StartNewLayout(int r, int c, int? seed = null)
     {
         rows = r;
@@ -57,14 +60,11 @@ public class DeckManager : MonoBehaviour
         ClearBoard();
         GenerateBoard(seed);
     }
-
+    
     private void ClearBoard()
     {
-        foreach (var card in allCards)
-        {
-            if (card != null)
-                Destroy(card.gameObject);
-        }
+        foreach (Transform child in gridParent)
+            Destroy(child.gameObject);
 
         allCards.Clear();
         revealQueue.Clear();
@@ -72,29 +72,40 @@ public class DeckManager : MonoBehaviour
 
     private void GenerateBoard(int? seed)
     {
-        ConfigureGridLayout();
-        int totalCells = rows * cols;
-        if (totalCells % 2 != 0)
-            totalCells--; // ensure even
+        gridLayout.enabled = true;
+        ConfigureResponsiveLayout();
 
-        // Pair IDs
+        int totalSlots = rows * cols;
+        bool needsSpacer = totalSlots % 2 != 0;
+
+        int playableCards = needsSpacer ? totalSlots - 1 : totalSlots;
+        int pairCount = playableCards / 2;
+
+        // Build pair IDs
         List<int> pairIds = new();
-        for (int i = 0; i < totalCells / 2; i++)
+        for (int i = 0; i < pairCount; i++)
         {
             pairIds.Add(i);
             pairIds.Add(i);
         }
 
-        // Shuffle deterministically if seed exists
+        // Shuffle
         System.Random rng = seed.HasValue ? new System.Random(seed.Value) : new System.Random();
         pairIds = pairIds.OrderBy(_ => rng.Next()).ToList();
 
-        // Spawn cards
-        for (int i = 0; i < pairIds.Count; i++)
+        int spacerIndex = needsSpacer ? GetCenterIndex(rows, cols) : -1;
+        int pairCursor = 0;
+
+        for (int slot = 0; slot < totalSlots; slot++)
         {
-            int pairId = pairIds[i];
+            if (slot == spacerIndex)
+            {
+                Instantiate(spacerPrefab, gridParent);
+                continue;
+            }
+
+            int pairId = pairIds[pairCursor++];
             CardController card = Instantiate(cardPrefab, gridParent);
-            card.name = $"Card_{i}_{pairId}";
 
             Sprite face = faceSprites.Count > 0
                 ? faceSprites[pairId % faceSprites.Count]
@@ -104,9 +115,51 @@ public class DeckManager : MonoBehaviour
             allCards.Add(card);
         }
 
-        // Force layout once, then freeze it
         LayoutRebuilder.ForceRebuildLayoutImmediate(gridParent);
         gridLayout.enabled = false;
+    }
+    
+    private void ConfigureResponsiveLayout()
+    {
+        Rect rect = gridParent.rect;
+
+        float desiredWidth =
+            cols * baseCardSize.x +
+            (cols - 1) * baseSpacing.x +
+            basePadding.x * 2;
+
+        float desiredHeight =
+            rows * baseCardSize.y +
+            (rows - 1) * baseSpacing.y +
+            basePadding.y * 2;
+
+        float scale = Mathf.Min(
+            rect.width / desiredWidth,
+            rect.height / desiredHeight
+        );
+
+        Vector2 finalCardSize = baseCardSize * scale;
+        Vector2 finalSpacing = baseSpacing * scale;
+        Vector2 finalPadding = basePadding * scale;
+
+        gridLayout.cellSize = finalCardSize;
+        gridLayout.spacing = finalSpacing;
+        gridLayout.padding = new RectOffset(
+            Mathf.RoundToInt(finalPadding.x),
+            Mathf.RoundToInt(finalPadding.x),
+            Mathf.RoundToInt(finalPadding.y),
+            Mathf.RoundToInt(finalPadding.y)
+        );
+
+        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayout.constraintCount = cols;
+    }
+
+    private int GetCenterIndex(int r, int c)
+    {
+        int centerRow = r / 2;
+        int centerCol = c / 2;
+        return centerRow * c + centerCol;
     }
 
     public async void NotifyCardClicked(CardController card)
@@ -150,42 +203,6 @@ public class DeckManager : MonoBehaviour
             CloseAfterDelay(a, b);
         }
     }
-    private void ConfigureGridLayout()
-    {
-        Rect rect = gridParent.rect;
-
-        float layoutWidth =
-            cols * baseCardSize.x +
-            (cols - 1) * baseSpacing.x +
-            basePadding.x * 2;
-
-        float layoutHeight =
-            rows * baseCardSize.y +
-            (rows - 1) * baseSpacing.y +
-            basePadding.y * 2;
-
-        float scaleX = rect.width / layoutWidth;
-        float scaleY = rect.height / layoutHeight;
-
-        float scale = Mathf.Min(scaleX, scaleY);
-
-        Vector2 finalCardSize = baseCardSize * scale;
-        Vector2 finalSpacing = baseSpacing * scale;
-        Vector2 finalPadding = basePadding * scale;
-
-        gridLayout.cellSize = finalCardSize;
-        gridLayout.spacing = finalSpacing;
-        gridLayout.padding = new RectOffset(
-            Mathf.RoundToInt(finalPadding.x),
-            Mathf.RoundToInt(finalPadding.x),
-            Mathf.RoundToInt(finalPadding.y),
-            Mathf.RoundToInt(finalPadding.y)
-        );
-
-        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = cols;
-    }
-
 
     private async void CloseAfterDelay(CardController a, CardController b)
     {
