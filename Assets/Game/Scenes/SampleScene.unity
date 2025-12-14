@@ -266,13 +266,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 97025215}
+  - component: {fileID: 97025216}
   m_Layer: 5
   m_Name: GameOverScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &97025215
 RectTransform:
   m_ObjectHideFlags: 0
@@ -294,6 +295,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &97025216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 97025214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dab70750c5533314d8e7e16f9e661b4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visualsParent: {fileID: 1260265778}
 --- !u!1 &150807424
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,6 +321,8 @@ GameObject:
   - component: {fileID: 150807425}
   - component: {fileID: 150807428}
   - component: {fileID: 150807427}
+  - component: {fileID: 150807431}
+  - component: {fileID: 150807430}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -446,8 +462,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea85c29f4f8789b4d9d717eaa986b44a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initialRows: 6
-  initialCols: 5
+  initialRows: 3
+  initialCols: 3
+--- !u!114 &150807430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150807424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0169ce360702c8e49a3d23aed076273a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &150807431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 150807424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 110086e58c872e8499669d76481f9be3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flipClip: {fileID: 8300000, guid: d337e35d58c10dd489291148e7114c03, type: 3}
+  matchClip: {fileID: 8300000, guid: b529b06811ff51d4aa65fef29a7b9e7f, type: 3}
+  mismatchClip: {fileID: 8300000, guid: 8bda5bc478d93584b9480d5f7ad02519, type: 3}
+  gameoverClip: {fileID: 8300000, guid: 8ef14d1641a5b844689f9c6519ac319e, type: 3}
 --- !u!1 &339156536
 GameObject:
   m_ObjectHideFlags: 0
@@ -1232,7 +1276,7 @@ RectTransform:
   - {fileID: 97025215}
   - {fileID: 904727138}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -1248,6 +1292,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 904727138}
+  - component: {fileID: 904727139}
   m_Layer: 5
   m_Name: GameScreen
   m_TagString: Untagged
@@ -1276,6 +1321,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &904727139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 904727137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ab948138ab83a74fbdc1fbcf11be3cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visualsParent: {fileID: 511523517}
 --- !u!1 &1260265777
 GameObject:
   m_ObjectHideFlags: 0
@@ -1350,8 +1408,8 @@ Camera:
   m_GameObject: {fileID: 1375557604}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1397,7 +1455,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1465223798
 GameObject:

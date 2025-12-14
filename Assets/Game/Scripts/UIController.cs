@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +12,9 @@ public class UIController : MonoBehaviour
     public TextMeshProUGUI comboText;
     public GameObject gameOverPanel;
 
+    private Dictionary<ScreenType, ScreenBase> _screensDict;
+    private ScreenBase _currentScreen;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -17,6 +22,27 @@ public class UIController : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        _screensDict = new Dictionary<ScreenType, ScreenBase>();
+        foreach (var obj in FindObjectsByType<ScreenBase>(FindObjectsSortMode.None))
+        {
+            _screensDict.TryAdd(obj.ScreenType, obj);
+            obj.Hide();
+        }
+        
+        ShowScreen(ScreenType.Game);
+    }
+
+    public void ShowScreen(ScreenType screenType)
+    {
+        if(_currentScreen!=null) 
+            _currentScreen.Hide();
+        
+        _currentScreen = _screensDict[screenType];
+        _currentScreen.Show();
+    }
+    
     public void UpdateScore(int score)
     {
         if (scoreText) 
@@ -36,8 +62,34 @@ public class UIController : MonoBehaviour
 
     public void ShowGameOver(int finalScore)
     {
-        if (gameOverPanel) 
-            gameOverPanel.SetActive(true);
+        ShowScreen(ScreenType.GameOver);
         UpdateScore(finalScore);
     }
+}
+[System.Serializable]
+public enum ScreenType
+{
+    Menu,
+    Game,
+    GameOver
+}
+
+public class ScreenBase : MonoBehaviour, IScreen
+{
+    public virtual ScreenType ScreenType { get; }
+
+    public virtual void Show()
+    {
+        
+    }
+
+    public virtual void Hide()
+    {
+    }
+}
+public interface IScreen
+{
+    ScreenType ScreenType { get; }
+    void Show();
+    void Hide();
 }
