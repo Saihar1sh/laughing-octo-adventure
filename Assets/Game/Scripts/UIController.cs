@@ -64,6 +64,8 @@ public class UIController : MonoBehaviour
     {
         ShowScreen(ScreenType.GameOver);
         UpdateScore(finalScore);
+        //Reset Combo Text
+        ShowCombo(0);
     }
 }
 [System.Serializable]

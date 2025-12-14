@@ -16,13 +16,18 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        StartNewGame(initialRows, initialCols);
+        StartNewGame();
     }
 
-    public void StartNewGame(int rows, int cols)
+    public void StartNewGame(int rows = -1, int cols = -1)
     {
+        if (rows == -1) rows = initialRows;
+        if (cols == -1) cols = initialCols;
+        
         DeckManager.Instance.StartNewLayout(rows, cols);
         ScoreManager.Instance.ResetScore();
+        
+        UIController.Instance.ShowScreen(ScreenType.Game);
     }
 
     public void OnGameOver()
@@ -36,5 +41,11 @@ public class GameManager : MonoBehaviour
     {
         if (!hasFocus) 
             PersistenceManager.Instance.AutoSave();
+    }
+
+    public void ExitGame()
+    {
+        Debug.Log("quiting game");
+        Application.Quit();
     }
 }

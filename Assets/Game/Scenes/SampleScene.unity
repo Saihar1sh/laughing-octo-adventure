@@ -308,6 +308,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visualsParent: {fileID: 1260265778}
+  gameoverText: {fileID: 635180710}
+  newGameButton: {fileID: 339156538}
+  exitButton: {fileID: 390337614}
 --- !u!1 &150807424
 GameObject:
   m_ObjectHideFlags: 0

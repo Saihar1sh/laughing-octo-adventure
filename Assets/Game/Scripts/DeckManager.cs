@@ -50,23 +50,19 @@ public class DeckManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
-    {
-    }
-    
     public async void StartNewLayout(int r, int c, int? seed = null, List<CardSaveData> saveData = null)
     {
         _rows = r;
         _cols = c;
 
         var seedValue = seed ?? UnityEngine.Random.Range(0, int.MaxValue);
+        _currentSeed = seedValue;
         
         ClearBoard();
         await GenerateBoard();
 
-        _currentSeed = seedValue;
         
-        if (seed.HasValue)
+        if (seed.HasValue && saveData != null)
         {
             LoadAllCards(saveData);
             Debug.Log("Loaded " + _allCards.Count + " cards");
@@ -128,10 +124,11 @@ public class DeckManager : MonoBehaviour
             card.name = "Card " + pairId;
             _allCards.Add(card);
         }
+        await Task.Yield();
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(gridParent);
+        
         gridLayout.enabled = false;
-        await Task.Yield();
     }
     
     private void ConfigureResponsiveLayout()

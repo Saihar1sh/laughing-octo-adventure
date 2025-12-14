@@ -44,7 +44,7 @@ public class PersistenceManager : MonoBehaviour
             while (ScoreManager.Instance.Score < wrapper.score) 
                 ScoreManager.Instance.OnMatch(); 
             
-            DeckManager.Instance.StartNewLayout(wrapper.deck.rows, wrapper.deck.cols, wrapper.deck.seed);
+            DeckManager.Instance.StartNewLayout(wrapper.deck.rows, wrapper.deck.cols, wrapper.deck.seed, wrapper.deck.cards);
 
             Debug.Log("Loaded save");
         }
