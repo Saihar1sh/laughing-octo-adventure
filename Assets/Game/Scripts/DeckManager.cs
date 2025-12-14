@@ -20,9 +20,7 @@ public class DeckManager : MonoBehaviour
     [SerializeField] private RectTransform gridParent;
     [SerializeField] private GridLayoutGroup gridLayout;
 
-    [Header("Grid Dimensions")]
-    [SerializeField] private int rows = 4;
-    [SerializeField] private int cols = 4;
+    
 
     [Header("Base Layout (Design Space)")]
     [SerializeField] private Vector2 baseCardSize = new Vector2(160, 230);
@@ -32,11 +30,16 @@ public class DeckManager : MonoBehaviour
     [Header("Card Faces")]
     [SerializeField] private List<Sprite> faceSprites;
 
-    private readonly List<CardController> allCards = new();
-    private readonly Queue<CardController> revealQueue = new();
+    private int _rows = 4;
+    private int _cols = 4;
 
-    private const float MismatchCloseDelay = 0.6f;
+    private readonly List<CardController> _allCards = new();
+    private readonly Queue<CardController> _revealQueue = new();
 
+    private const float MISMATCH_CLOSE_DELAY = 0.6f;
+
+    private int _currentSeed;
+    
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -49,16 +52,25 @@ public class DeckManager : MonoBehaviour
 
     private void Start()
     {
-        StartNewLayout(5, 5, 453);
     }
     
-    public void StartNewLayout(int r, int c, int? seed = null)
+    public async void StartNewLayout(int r, int c, int? seed = null, List<CardSaveData> saveData = null)
     {
-        rows = r;
-        cols = c;
+        _rows = r;
+        _cols = c;
 
+        var seedValue = seed ?? UnityEngine.Random.Range(0, int.MaxValue);
+        
         ClearBoard();
-        GenerateBoard(seed);
+        await GenerateBoard();
+
+        _currentSeed = seedValue;
+        
+        if (seed.HasValue)
+        {
+            LoadAllCards(saveData);
+            Debug.Log("Loaded " + _allCards.Count + " cards");
+        }
     }
     
     private void ClearBoard()
@@ -66,16 +78,16 @@ public class DeckManager : MonoBehaviour
         foreach (Transform child in gridParent)
             Destroy(child.gameObject);
 
-        allCards.Clear();
-        revealQueue.Clear();
+        _allCards.Clear();
+        _revealQueue.Clear();
     }
 
-    private void GenerateBoard(int? seed)
+    private async Task GenerateBoard()
     {
         gridLayout.enabled = true;
         ConfigureResponsiveLayout();
 
-        int totalSlots = rows * cols;
+        int totalSlots = _rows * _cols;
         bool needsSpacer = totalSlots % 2 != 0;
 
         int playableCards = needsSpacer ? totalSlots - 1 : totalSlots;
@@ -90,10 +102,10 @@ public class DeckManager : MonoBehaviour
         }
 
         // Shuffle
-        System.Random rng = seed.HasValue ? new System.Random(seed.Value) : new System.Random();
+        System.Random rng = new System.Random(_currentSeed);
         pairIds = pairIds.OrderBy(_ => rng.Next()).ToList();
 
-        int spacerIndex = needsSpacer ? GetCenterIndex(rows, cols) : -1;
+        int spacerIndex = needsSpacer ? GetCenterIndex(_rows, _cols) : -1;
         int pairCursor = 0;
 
         for (int slot = 0; slot < totalSlots; slot++)
@@ -107,16 +119,19 @@ public class DeckManager : MonoBehaviour
             int pairId = pairIds[pairCursor++];
             CardController card = Instantiate(cardPrefab, gridParent);
 
+            int spriteIndex = pairId % faceSprites.Count;
             Sprite face = faceSprites.Count > 0
-                ? faceSprites[pairId % faceSprites.Count]
+                ? faceSprites[spriteIndex]
                 : null;
 
             card.Initialize(pairId, face);
-            allCards.Add(card);
+            card.name = "Card " + pairId;
+            _allCards.Add(card);
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(gridParent);
         gridLayout.enabled = false;
+        await Task.Yield();
     }
     
     private void ConfigureResponsiveLayout()
@@ -124,13 +139,13 @@ public class DeckManager : MonoBehaviour
         Rect rect = gridParent.rect;
 
         float desiredWidth =
-            cols * baseCardSize.x +
-            (cols - 1) * baseSpacing.x +
+            _cols * baseCardSize.x +
+            (_cols - 1) * baseSpacing.x +
             basePadding.x * 2;
 
         float desiredHeight =
-            rows * baseCardSize.y +
-            (rows - 1) * baseSpacing.y +
+            _rows * baseCardSize.y +
+            (_rows - 1) * baseSpacing.y +
             basePadding.y * 2;
 
         float scale = Mathf.Min(
@@ -152,7 +167,7 @@ public class DeckManager : MonoBehaviour
         );
 
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = cols;
+        gridLayout.constraintCount = _cols;
     }
 
     private int GetCenterIndex(int r, int c)
@@ -167,22 +182,23 @@ public class DeckManager : MonoBehaviour
         if (card == null || card.IsBusy)
             return;
 
+        AudioManager.Instance.PlayFlip();
         await card.FlipOpen();
 
         if (card.State != CardState.Revealed)
             return;
 
-        revealQueue.Enqueue(card);
+        _revealQueue.Enqueue(card);
         ResolveRevealQueue();
     }
 
     private void ResolveRevealQueue()
     {
-        if (revealQueue.Count < 2)
+        if (_revealQueue.Count < 2)
             return;
 
-        CardController a = revealQueue.Dequeue();
-        CardController b = revealQueue.Dequeue();
+        CardController a = _revealQueue.Dequeue();
+        CardController b = _revealQueue.Dequeue();
 
         if (a == b)
             return;
@@ -191,26 +207,85 @@ public class DeckManager : MonoBehaviour
         {
             a.SetMatched();
             b.SetMatched();
-
-            if (allCards.All(c => c.State == CardState.Matched))
+            ScoreManager.Instance.OnMatch();
+            AudioManager.Instance.PlayMatch();
+            
+            if (_allCards.All(c => c.State == CardState.Matched))
             {
                 // TODO: Game Over
+                GameManager.Instance.OnGameOver();
+                
                 Debug.Log("Game Over");
             }
         }
         else
         {
+            ScoreManager.Instance.OnMismatch();
+            AudioManager.Instance.PlayMismatch();
+
             CloseAfterDelay(a, b);
         }
     }
 
     private async void CloseAfterDelay(CardController a, CardController b)
     {
-        await Task.Delay(TimeSpan.FromSeconds(MismatchCloseDelay));
+        await Task.Delay(TimeSpan.FromSeconds(MISMATCH_CLOSE_DELAY));
 
         if (a.State == CardState.Revealed)
             a.FlipClose();
         if (b.State == CardState.Revealed)
             b.FlipClose();
     }
+    
+    public DeckSaveData CaptureDeckState()
+    {
+        var data = new DeckSaveData
+        {
+            rows = _rows,
+            cols = _cols,
+            seed = _currentSeed,
+            cards = new List<CardSaveData>()
+        };
+        foreach (var c in _allCards)
+        {
+            if (c == null) continue;
+            data.cards.Add(new CardSaveData
+            {
+                pairId = c.PairId,
+                state = c.State.ToString(),
+                active = c.gameObject.activeSelf
+            });
+        }
+        return data;
+    }
+
+    private void LoadAllCards(List<CardSaveData> cardsSaveData)
+    {
+        _allCards.Clear();
+        foreach (var c in cardsSaveData)
+        {
+            CardController card = Instantiate(cardPrefab, gridParent);
+            Sprite faceSprite = faceSprites.Count > 0 ? faceSprites[c.pairId % faceSprites.Count] : null;
+            card.Initialize(c.pairId, faceSprite);
+            _allCards.Add(card);
+        }
+    }
+    
+}
+
+[System.Serializable]
+public class CardSaveData
+{
+    public int pairId;
+    public string state;
+    public bool active;
+}
+
+[System.Serializable]
+public class DeckSaveData
+{
+    public int rows;
+    public int cols;
+    public int seed;
+    public List<CardSaveData> cards;
 }

@@ -39,13 +39,12 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         canvasGroup = GetComponent<CanvasGroup>();
     }
 
-    public async void Initialize(int pairId, Sprite face)
+    public void Initialize(int pairId, Sprite face)
     {
         PairId = pairId;
         faceImage.sprite = face;
-
+        
         canvasGroup.alpha = 1f;
-
         canvasGroup.blocksRaycasts = true;
         canvasGroup.interactable = true;
         SetHiddenInstant();
