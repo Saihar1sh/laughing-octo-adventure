@@ -5,9 +5,7 @@ using UnityEngine;
 public class GameScreen : ScreenBase
 {
     public override ScreenType ScreenType => ScreenType.Game;
-
-    [SerializeField] private Transform visualsParent;
-
+    
     public override void Show()
     {
         base.Show();

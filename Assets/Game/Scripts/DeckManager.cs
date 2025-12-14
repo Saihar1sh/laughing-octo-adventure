@@ -33,9 +33,10 @@ public class DeckManager : MonoBehaviour
     private int _rows = 4;
     private int _cols = 4;
 
-    private readonly List<CardController> _allCards = new();
+    private readonly List<CardController> _activeCards = new();
     private readonly Queue<CardController> _revealQueue = new();
-
+    private readonly Stack<CardController> _cardPool = new();
+    
     private const float MISMATCH_CLOSE_DELAY = 0.6f;
 
     private int _currentSeed;
@@ -61,20 +62,31 @@ public class DeckManager : MonoBehaviour
         ClearBoard();
         await GenerateBoard();
 
-        
+        //Has save data, load it
         if (seed.HasValue && saveData != null)
         {
+            ClearBoard();
             LoadAllCards(saveData);
-            Debug.Log("Loaded " + _allCards.Count + " cards");
+            Debug.Log("Loaded " + _activeCards.Count + " cards");
         }
     }
     
     private void ClearBoard()
     {
         foreach (Transform child in gridParent)
-            Destroy(child.gameObject);
+        {
+            var card = child.GetComponent<CardController>();
+            if (card != null)
+            {
+                ReturnCardToPool(card);
+            }
+            else
+            {
+                Destroy(child.gameObject); // spacer
+            }
+        }
 
-        _allCards.Clear();
+        _activeCards.Clear();
         _revealQueue.Clear();
     }
 
@@ -103,7 +115,7 @@ public class DeckManager : MonoBehaviour
 
         int spacerIndex = needsSpacer ? GetCenterIndex(_rows, _cols) : -1;
         int pairCursor = 0;
-
+        
         for (int slot = 0; slot < totalSlots; slot++)
         {
             if (slot == spacerIndex)
@@ -112,17 +124,18 @@ public class DeckManager : MonoBehaviour
                 continue;
             }
 
-            int pairId = pairIds[pairCursor++];
-            CardController card = Instantiate(cardPrefab, gridParent);
 
-            int spriteIndex = pairId % faceSprites.Count;
-            Sprite face = faceSprites.Count > 0
-                ? faceSprites[spriteIndex]
-                : null;
+            CardController card = GetCardFromPool();
+            card.transform.SetParent(gridParent, false);
+
+
+            int pairId = pairIds[pairCursor++];
+            Sprite face = faceSprites.Count > 0 ? faceSprites[pairId % faceSprites.Count] : null;
+
 
             card.Initialize(pairId, face);
             card.name = "Card " + pairId;
-            _allCards.Add(card);
+            _activeCards.Add(card);
         }
         await Task.Yield();
 
@@ -207,7 +220,7 @@ public class DeckManager : MonoBehaviour
             ScoreManager.Instance.OnMatch();
             AudioManager.Instance.PlayMatch();
             
-            if (_allCards.All(c => c.State == CardState.Matched))
+            if (_activeCards.All(c => c.State == CardState.Matched))
             {
                 // TODO: Game Over
                 GameManager.Instance.OnGameOver();
@@ -243,7 +256,7 @@ public class DeckManager : MonoBehaviour
             seed = _currentSeed,
             cards = new List<CardSaveData>()
         };
-        foreach (var c in _allCards)
+        foreach (var c in _activeCards)
         {
             if (c == null) continue;
             data.cards.Add(new CardSaveData
@@ -258,16 +271,37 @@ public class DeckManager : MonoBehaviour
 
     private void LoadAllCards(List<CardSaveData> cardsSaveData)
     {
-        _allCards.Clear();
+        _activeCards.Clear();
         foreach (var c in cardsSaveData)
         {
-            CardController card = Instantiate(cardPrefab, gridParent);
+            CardController card = GetCardFromPool();
+            card.transform.SetParent(transform, false);
             Sprite faceSprite = faceSprites.Count > 0 ? faceSprites[c.pairId % faceSprites.Count] : null;
             card.Initialize(c.pairId, faceSprite);
-            _allCards.Add(card);
+            _activeCards.Add(card);
         }
     }
-    
+    private CardController GetCardFromPool()
+    {
+        if (_cardPool.Count > 0)
+        {
+            var card = _cardPool.Pop();
+            card.gameObject.SetActive(true);
+            return card;
+        }
+
+
+        return Instantiate(cardPrefab);
+    }
+
+
+    private void ReturnCardToPool(CardController card)
+    {
+        card.ResetState();
+        card.gameObject.SetActive(false);
+        card.transform.SetParent(transform, false);
+        _cardPool.Push(card);
+    }
 }
 
 [System.Serializable]

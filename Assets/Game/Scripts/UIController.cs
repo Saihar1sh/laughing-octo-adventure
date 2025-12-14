@@ -20,10 +20,7 @@ public class UIController : MonoBehaviour
         if (Instance != null && Instance != this)
             Destroy(this);
         Instance = this;
-    }
-
-    private void Start()
-    {
+        
         _screensDict = new Dictionary<ScreenType, ScreenBase>();
         foreach (var obj in FindObjectsByType<ScreenBase>(FindObjectsSortMode.None))
         {
@@ -41,6 +38,15 @@ public class UIController : MonoBehaviour
         
         _currentScreen = _screensDict[screenType];
         _currentScreen.Show();
+    }
+    
+    public bool IsScreenActive(ScreenType screenType)
+    {
+        if (_screensDict.TryGetValue(screenType, out var screen))
+        {
+            return screen.visualsParent.gameObject.activeSelf;
+        }
+        return false;
     }
     
     public void UpdateScore(int score)
@@ -72,6 +78,7 @@ public class UIController : MonoBehaviour
 public enum ScreenType
 {
     Menu,
+    LevelSelect,
     Game,
     GameOver
 }
@@ -79,6 +86,8 @@ public enum ScreenType
 public class ScreenBase : MonoBehaviour, IScreen
 {
     public virtual ScreenType ScreenType { get; }
+    [field: SerializeField] public Transform visualsParent{ get; protected set; }
+
 
     public virtual void Show()
     {

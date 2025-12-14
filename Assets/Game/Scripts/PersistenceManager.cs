@@ -32,19 +32,19 @@ public class PersistenceManager : MonoBehaviour
 
     public void Load()
     {
-        string path = Path.Combine(Application.persistentDataPath, saveFileName);
-        if (!File.Exists(path)) { Debug.Log("No save file"); return; }
+        if (!LoadExists(out var path)) return;
         try
         {
             string json = File.ReadAllText(path);
             var wrapper = JsonUtility.FromJson<SaveWrapper>(json);
+            
+            GameManager.Instance.StartNewGame(wrapper.deck.rows, wrapper.deck.cols, wrapper.deck.seed, wrapper.deck.cards);
             
             ScoreManager.Instance.ResetScore();
             // restore score
             while (ScoreManager.Instance.Score < wrapper.score) 
                 ScoreManager.Instance.OnMatch(); 
             
-            DeckManager.Instance.StartNewLayout(wrapper.deck.rows, wrapper.deck.cols, wrapper.deck.seed, wrapper.deck.cards);
 
             Debug.Log("Loaded save");
         }
@@ -52,6 +52,17 @@ public class PersistenceManager : MonoBehaviour
         {
             Debug.LogWarning("Load failed: " + e.Message);
         }
+    }
+
+    public bool LoadExists(out string path)
+    {
+        path = Path.Combine(Application.persistentDataPath, saveFileName);
+        if (!File.Exists(path))
+        {
+            Debug.Log("No save file");
+            return false;
+        }
+        return true;
     }
 
     [System.Serializable]

@@ -50,6 +50,19 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         SetHiddenInstant();
     }
 
+    public void ResetState()
+    {
+        State = CardState.Hidden;
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+
+        rectTransform.localScale = Vector3.one;
+
+        faceImage.gameObject.SetActive(false);
+        backImage.gameObject.SetActive(true);
+    }
     public void OnPointerClick(PointerEventData eventData)
     {
         if (State != CardState.Hidden)

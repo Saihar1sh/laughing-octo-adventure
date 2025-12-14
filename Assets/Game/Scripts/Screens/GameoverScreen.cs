@@ -9,7 +9,6 @@ public class GameoverScreen : ScreenBase
 {
     public override ScreenType ScreenType => ScreenType.GameOver;
 
-    [SerializeField] private Transform visualsParent;
     [SerializeField] private TextMeshProUGUI gameoverText;
     [SerializeField] private Button newGameButton;
     [SerializeField] private Button exitButton;
@@ -18,7 +17,7 @@ public class GameoverScreen : ScreenBase
     private void Awake()
     {
         newGameButton.onClick.AddListener(() => GameManager.Instance.StartNewGame());
-        exitButton.onClick.AddListener(() => GameManager.Instance.ExitGame());
+        exitButton.onClick.AddListener(() => UIController.Instance.ShowScreen(ScreenType.Menu));
     }
 
     public override void Show()
