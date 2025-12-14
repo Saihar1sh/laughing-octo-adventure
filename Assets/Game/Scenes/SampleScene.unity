@@ -821,7 +821,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dab70750c5533314d8e7e16f9e661b4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualsParent: {fileID: 1260265778}
+  <visualsParent>k__BackingField: {fileID: 1260265778}
   gameoverText: {fileID: 635180710}
   newGameButton: {fileID: 339156538}
   exitButton: {fileID: 390337614}
@@ -1329,7 +1329,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c4df2c2fa6bf6d46a957f76fd201bf6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualsParent: {fileID: 1039350273}
+  <visualsParent>k__BackingField: {fileID: 1039350273}
   startGameButton: {fileID: 757534796}
   loadGameButton: {fileID: 1530036233}
   exitGameButton: {fileID: 1665438101}
@@ -2396,7 +2396,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &511523517
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2739,7 +2739,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9d62d00b4089624896ceb048119fdd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualsParent: {fileID: 913801912}
+  <visualsParent>k__BackingField: {fileID: 913801912}
   button3x3: {fileID: 1182857466}
   button4x4: {fileID: 1167847}
   button5x5: {fileID: 1448922637}
@@ -3161,7 +3161,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ab948138ab83a74fbdc1fbcf11be3cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualsParent: {fileID: 511523517}
+  <visualsParent>k__BackingField: {fileID: 511523517}
 --- !u!1 &913801911
 GameObject:
   m_ObjectHideFlags: 0

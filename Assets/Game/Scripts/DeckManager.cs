@@ -1,6 +1,7 @@
 // =========================
 // DeckManager.cs (FINAL REWRITE)
 // =========================
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,23 +13,23 @@ public class DeckManager : MonoBehaviour
 {
     public static DeckManager Instance { get; private set; }
 
-    [Header("Prefabs")]
-    [SerializeField] private CardController cardPrefab;
+    [Header("Prefabs")] [SerializeField] private CardController cardPrefab;
     [SerializeField] private RectTransform spacerPrefab; // empty invisible spacer
 
-    [Header("Layout Target")]
-    [SerializeField] private RectTransform gridParent;
+    [Header("Layout Target")] [SerializeField]
+    private RectTransform gridParent;
+
     [SerializeField] private GridLayoutGroup gridLayout;
 
-    
 
-    [Header("Base Layout (Design Space)")]
-    [SerializeField] private Vector2 baseCardSize = new Vector2(160, 230);
+    [Header("Base Layout (Design Space)")] [SerializeField]
+    private Vector2 baseCardSize = new Vector2(160, 230);
+
     [SerializeField] private Vector2 baseSpacing = new Vector2(12, 12);
     [SerializeField] private Vector2 basePadding = new Vector2(20, 20);
 
-    [Header("Card Faces")]
-    [SerializeField] private List<Sprite> faceSprites;
+    [Header("Card Faces")] [SerializeField]
+    private List<Sprite> faceSprites;
 
     private int _rows = 4;
     private int _cols = 4;
@@ -36,11 +37,11 @@ public class DeckManager : MonoBehaviour
     private readonly List<CardController> _activeCards = new();
     private readonly Queue<CardController> _revealQueue = new();
     private readonly Stack<CardController> _cardPool = new();
-    
+
     private const float MISMATCH_CLOSE_DELAY = 0.6f;
 
     private int _currentSeed;
-    
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -48,6 +49,7 @@ public class DeckManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
     }
 
@@ -58,19 +60,11 @@ public class DeckManager : MonoBehaviour
 
         var seedValue = seed ?? UnityEngine.Random.Range(0, int.MaxValue);
         _currentSeed = seedValue;
-        
-        ClearBoard();
-        await GenerateBoard();
 
-        //Has save data, load it
-        if (seed.HasValue && saveData != null)
-        {
-            ClearBoard();
-            LoadAllCards(saveData);
-            Debug.Log("Loaded " + _activeCards.Count + " cards");
-        }
+        ClearBoard();
+        await GenerateBoard(saveData);
     }
-    
+
     private void ClearBoard()
     {
         foreach (Transform child in gridParent)
@@ -90,13 +84,19 @@ public class DeckManager : MonoBehaviour
         _revealQueue.Clear();
     }
 
-    private async Task GenerateBoard()
+    private async Task GenerateBoard(List<CardSaveData> cardsSaveData = null)
     {
         gridLayout.enabled = true;
         ConfigureResponsiveLayout();
 
         int totalSlots = _rows * _cols;
         bool needsSpacer = totalSlots % 2 != 0;
+        bool hasSavedData = false;
+        if (cardsSaveData != null)
+        {
+            totalSlots = cardsSaveData.Count;
+            hasSavedData = true;
+        }
 
         int playableCards = needsSpacer ? totalSlots - 1 : totalSlots;
         int pairCount = playableCards / 2;
@@ -115,7 +115,7 @@ public class DeckManager : MonoBehaviour
 
         int spacerIndex = needsSpacer ? GetCenterIndex(_rows, _cols) : -1;
         int pairCursor = 0;
-        
+        CardSaveData cardSaveData = null;
         for (int slot = 0; slot < totalSlots; slot++)
         {
             if (slot == spacerIndex)
@@ -124,26 +124,31 @@ public class DeckManager : MonoBehaviour
                 continue;
             }
 
+            if (hasSavedData)
+                cardSaveData = cardsSaveData[slot];
 
             CardController card = GetCardFromPool();
             card.transform.SetParent(gridParent, false);
 
 
-            int pairId = pairIds[pairCursor++];
+            int pairId = !hasSavedData ? pairIds[pairCursor++] : cardSaveData.pairId;
             Sprite face = faceSprites.Count > 0 ? faceSprites[pairId % faceSprites.Count] : null;
 
 
             card.Initialize(pairId, face);
             card.name = "Card " + pairId;
             _activeCards.Add(card);
+            if (hasSavedData)
+                card.SetState(Enum.Parse<CardState>(cardSaveData.state));
         }
+
         await Task.Yield();
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(gridParent);
-        
+
         gridLayout.enabled = false;
     }
-    
+
     private void ConfigureResponsiveLayout()
     {
         Rect rect = gridParent.rect;
@@ -219,12 +224,12 @@ public class DeckManager : MonoBehaviour
             b.SetMatched();
             ScoreManager.Instance.OnMatch();
             AudioManager.Instance.PlayMatch();
-            
+
             if (_activeCards.All(c => c.State == CardState.Matched))
             {
                 // TODO: Game Over
                 GameManager.Instance.OnGameOver();
-                
+
                 Debug.Log("Game Over");
             }
         }
@@ -246,7 +251,7 @@ public class DeckManager : MonoBehaviour
         if (b.State == CardState.Revealed)
             b.FlipClose();
     }
-    
+
     public DeckSaveData CaptureDeckState()
     {
         var data = new DeckSaveData
@@ -266,21 +271,10 @@ public class DeckManager : MonoBehaviour
                 active = c.gameObject.activeSelf
             });
         }
+
         return data;
     }
-
-    private void LoadAllCards(List<CardSaveData> cardsSaveData)
-    {
-        _activeCards.Clear();
-        foreach (var c in cardsSaveData)
-        {
-            CardController card = GetCardFromPool();
-            card.transform.SetParent(transform, false);
-            Sprite faceSprite = faceSprites.Count > 0 ? faceSprites[c.pairId % faceSprites.Count] : null;
-            card.Initialize(c.pairId, faceSprite);
-            _activeCards.Add(card);
-        }
-    }
+    
     private CardController GetCardFromPool()
     {
         if (_cardPool.Count > 0)

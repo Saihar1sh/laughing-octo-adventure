@@ -50,6 +50,28 @@ public class CardController : MonoBehaviour, IPointerClickHandler
         SetHiddenInstant();
     }
 
+    public async void SetState(CardState state)
+    {
+        State = state;
+        switch (state)
+        {
+            case CardState.Hidden:
+                FlipClose();
+                break;
+            case CardState.Revealing:
+            case CardState.Revealed:
+                await FlipOpen();
+                ShowFaceCard();
+                DeckManager.Instance.NotifyCardClicked(this);
+                break;
+            case CardState.Matched:
+                SetMatched();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(state), state, null);
+        }
+    }
+
     public void ResetState()
     {
         State = CardState.Hidden;

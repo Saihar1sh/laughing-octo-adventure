@@ -38,6 +38,8 @@ public class PersistenceManager : MonoBehaviour
             string json = File.ReadAllText(path);
             var wrapper = JsonUtility.FromJson<SaveWrapper>(json);
             
+            if(wrapper.deck.cards == null || wrapper.deck.cards.Count == 0) return;
+            
             GameManager.Instance.StartNewGame(wrapper.deck.rows, wrapper.deck.cols, wrapper.deck.seed, wrapper.deck.cards);
             
             ScoreManager.Instance.ResetScore();
